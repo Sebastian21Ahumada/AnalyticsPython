@@ -1,0 +1,96 @@
+import numpy as np
+import pandas as pd
+import statsmodels.api as sm
+import matplotlib.pyplot as plt
+from sklearn.linear_model import LinearRegression
+import seaborn as sns
+sns.set()
+
+df = pd.read_csv("C:/Users/katyl/Downloads/RL example.csv")
+df.head()
+
+df.describe(include='all')
+
+df2 = df.drop(['Model'], axis = 1) ## Eliminamos esta columna (axis=1 para columnas, 0 para filas), ya que tiene 312 valores únicos que afectarían nuestro modelo
+df2.describe(include='all')
+
+df2.isnull().sum() 
+
+##Podemos eliminar los valores nulos si estos equivalen a menos del 5% de las observaciones
+
+df3 = df2.dropna(axis=0) ##Axis = 0 equivale a eliminar todas las filas que tienen alagún valor nulo
+
+sns.displot(df3['Price'])
+
+## Podemos eliminar el 1% más alto de estos valores, para combatir los outliers:
+
+q = df3['Price'].quantile(0.99)
+df4 = df3[df3['Price']<q]
+df4.describe(include='all')
+
+sns.displot(df4['Price'])
+sns.displot(df4['Mileage'])
+
+q = df4['Mileage'].quantile(0.99)
+df5 = df4[df4['Mileage']<q]
+
+sns.displot(df5['Mileage'])
+
+sns.displot(df5['EngineV'])
+
+df6 = df5[df5['EngineV']<6.5] ##6.5 es el maximo que permite un motor de auto, por lo tanto lo otro son datos mal capturados
+
+sns.displot(df6['EngineV'])
+sns.displot(df6['Year'])
+
+q = df6['Year'].quantile(0.01)
+df7 = df6[df6['Year']>q]
+
+sns.displot(df7['Year'])
+data_cleaned = df7.reset_index(drop=True)
+data_cleaned.describe(include='all')
+
+## Realizar un Scatter plot, de las variables problemáticas versus la que queremos analizar:
+
+f, (ax1, ax2, ax3) = plt.subplots(1,3, sharey=True, figsize= (15,3))
+ax1.scatter(data_cleaned['Year'],data_cleaned['Price'])
+ax1.set_title('Price and Year')
+ax2.scatter(data_cleaned['Mileage'],data_cleaned['Price'])
+ax2.set_title('Price and Mileage')
+ax3.scatter(data_cleaned['EngineV'],data_cleaned['Price'])
+ax3.set_title('Price and EngineV')
+
+plt.show()
+
+sns.displot(data_cleaned['Price'])
+
+
+## La transformación logaritmica sirve cuando nuestras relaciones son exponenciales con la variable que queremos predecir.
+
+log_price = np.log(data_cleaned['Price'])
+data_cleaned['log_price'] = log_price
+data_cleaned.head()
+
+
+f, (ax1, ax2, ax3) = plt.subplots(1,3, sharey=True, figsize= (15,3))
+ax1.scatter(data_cleaned['Year'],data_cleaned['log_price'])
+ax1.set_title('Price and Year')
+ax2.scatter(data_cleaned['Mileage'],data_cleaned['log_price'])
+ax2.set_title('Price and Mileage')
+ax3.scatter(data_cleaned['EngineV'],data_cleaned['log_price'])
+ax3.set_title('Price and EngineV')
+
+plt.show()
+
+
+data_cleaned = data_cleaned.drop(['Price'],axis = 1) ## Eliminar la columna de Price del df
+
+from statsmodels.stats.outliers_influence import variance_inflation_factor
+variables = data_cleaned[['Mileage','Year','EngineV']]
+vif = pd.DataFrame()
+vif["VIF"] = [variance_inflation_factor(variables.values, i) for i in range(variables.shape[1])]
+vif["features"] = variables.columns
+
+pd.options.display.max_rows = 15
+pd.set_option('display.float_format', lambda x: '%2.f' % x)
+df_pf.sort_values(by='Difference%')
